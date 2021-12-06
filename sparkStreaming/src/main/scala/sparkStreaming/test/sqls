@@ -1,0 +1,16 @@
+#实时数据
+    #热门分类
+select count(*),action from category where (unix_timestamp(current_timestamp())-3600)*1000<mytime and mytime<unix_timestamp(current_timestamp())*1000 group by action;
+    #热门商品
+select count(*),action from product where (unix_timestamp(current_timestamp())-3600)*1000<mytime and mytime<unix_timestamp(current_timestamp())*1000 group by action;
+    #订单量
+select count(*),action from trading where (unix_timestamp(current_timestamp())-3600)*1000<mytime and mytime<unix_timestamp(current_timestamp())*1000 group by action;
+    #当前活跃用户
+select count(*),action from activeusers where (unix_timestamp(current_timestamp())-3600)*1000<mytime and mytime<unix_timestamp(current_timestamp())*1000 group by action;
+#离线分析
+    #近期历史活跃用户
+    #热门分类
+    #热门商品
+    #总订单数量
+    #总成交额
+#select mytime from category where (unix_timestamp(current_timestamp())-3600*2)*1000<mytime;
