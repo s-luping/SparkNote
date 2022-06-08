@@ -1,6 +1,5 @@
-package sparkStreaming
+package sparkStreaming.canel
 
-import CommonUtils.ConnectPropertis
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.sql.SparkSession
@@ -9,13 +8,18 @@ import org.apache.spark.streaming.kafka010.{ConsumerStrategies, KafkaUtils, Loca
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 
-import java.util.Date
+import java.util.{Date, Properties}
 
-object Kafka_spark_streaming {
+/**
+ * @author sluping
+ * @create 22/6/5 0:51
+ * @Description :
+ */
+object canalStreaming {
 
   def main(args: Array[String]): Unit = {
     // offset保存路径
-    val checkpointPath = "file:///export/data/kafka/checkpoint/kafka-direct"
+    val checkpointPath = "checkpoints/kafka-direct"
 
     val conf = new SparkConf()
       .setAppName("ScalaKafkaStreaming")
@@ -43,7 +47,10 @@ object Kafka_spark_streaming {
     val kafkaTopicDS = KafkaUtils.createDirectStream(ssc, LocationStrategies.PreferConsistent,
       ConsumerStrategies.Subscribe[String, String](Set(topicName), kafkaParams))
     import spark.implicits._
-    val properties = ConnectPropertis.properties
+    val properties = new Properties()
+    properties.setProperty("user", "root")
+    properties.setProperty("password", "bailishuixiang.net")
+    properties.setProperty("driver", "com.mysql.cj.jdbc.Driver")
     val uri = "jdbc:mysql://139.198.124.160:3306/tmalldata?useSSL=false"
 
     kafkaTopicDS.foreachRDD(
@@ -59,23 +66,27 @@ object Kafka_spark_streaming {
           .reduceByKey(_ + _)
           .map(x => (now2, x._1, x._2))
           .toDF("mytime", "action", "frequency")
-        val top_category = action_df.select("*").where("action  like '%分类ID为%'")//.orderBy(action_df("frequency").desc)
-        if (top_category.count()>0){
+        val top_category = action_df.select("*").where("action  like '%分类ID为%'") //.orderBy(action_df("frequency").desc)
+        if (top_category.count() > 0) {
           top_category.show()
-          top_category.write.mode("append").jdbc(uri, "category", properties)}
+          top_category.write.mode("append").jdbc(uri, "category", properties)
+        }
 
-        val product_Popular_Buy = action_df.select("*").where("action  like '%通过产品ID获取产品信息%'")//.orderBy(action_df("frequency").desc)
-        if (product_Popular_Buy.count()>0){product_Popular_Buy.show()
-          product_Popular_Buy.write.mode("append").jdbc(uri, "product", properties)}
+        val product_Popular_Buy = action_df.select("*").where("action  like '%通过产品ID获取产品信息%'") //.orderBy(action_df("frequency").desc)
+        if (product_Popular_Buy.count() > 0) {
+          product_Popular_Buy.show()
+          product_Popular_Buy.write.mode("append").jdbc(uri, "product", properties)
+        }
 
-        val Active_users = action_df.select("*").where("action  like '%用户已登录，用户ID%'")//.orderBy(action_df("frequency"))
-        if(Active_users.count()>0){
+        val Active_users = action_df.select("*").where("action  like '%用户已登录，用户ID%'") //.orderBy(action_df("frequency"))
+        if (Active_users.count() > 0) {
           Active_users.show()
-          Active_users.write.mode("append").jdbc(uri, "activeusers", properties)}
+          Active_users.write.mode("append").jdbc(uri, "activeusers", properties)
+        }
 
-        val money = action_df.select("*").where("action  like '%总共支付金额为%'")//.orderBy(action_df("frequency").desc)
-        val money2 = money.withColumn("single_transaction", regexp_extract($"action", "([0-9]+)",0))
-        if(money2.count()>0){
+        val money = action_df.select("*").where("action  like '%总共支付金额为%'") //.orderBy(action_df("frequency").desc)
+        val money2 = money.withColumn("single_transaction", regexp_extract($"action", "([0-9]+)", 0))
+        if (money2.count() > 0) {
           money2.show()
           money2.write.mode("append").jdbc(uri, "trading", properties)
         }
